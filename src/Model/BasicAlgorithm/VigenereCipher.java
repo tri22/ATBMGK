@@ -59,8 +59,9 @@ public class VigenereCipher implements BasicAlgorithm {
 
     // Gán key ngẫu nhiên mặc định độ dài 5
     @Override
-    public void genKey() {
+    public boolean genKey() {
         this.key = generateRandomKey(5);
+        return this.key != null;
     }
 
     // Dùng key đã tạo để mã hóa

@@ -11,7 +11,7 @@ public class AffineCipher implements BasicAlgorithm{
     }
     
     @Override
-	public void genKey() {
+	public boolean genKey() {
 		Random rand = new Random();
 		int a;
 		do {
@@ -19,6 +19,7 @@ public class AffineCipher implements BasicAlgorithm{
 		} while (gcd(a, N) != 1); // Chọn a sao cho gcd(a, N) = 1
 		int b = rand.nextInt(N); // Chọn b bất kỳ trong khoảng [0, N-1]
 		key = new int[] { a, b };
+		return key.length == 2 && key[0] != 0 && key[1] != 0;
 	}
 
 	@Override

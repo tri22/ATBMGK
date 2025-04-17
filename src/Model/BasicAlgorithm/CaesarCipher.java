@@ -6,13 +6,13 @@ public class CaesarCipher implements BasicAlgorithm {
     private int shift;
 
     public CaesarCipher() {
-        genKey();
+//        genKey();
     }
 
     @Override
-    public void genKey() {
+    public boolean genKey() {
         shift = new Random().nextInt(25) + 1;
-        System.out.println("Generated Caesar key: " + shift);
+        return true;
     }
 
     @Override

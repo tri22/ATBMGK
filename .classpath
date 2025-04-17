@@ -7,5 +7,7 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="C:/Users/Trung Tri/Downloads/bcprov-jdk18on-1.80.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Trung Tri/Downloads/ATBMHTTT_Seminar/bcprov-jdk15on-1.70.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Trung Tri/Downloads/ATBMHTTT_Seminar/bcprov-jdk15to18-1.79.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

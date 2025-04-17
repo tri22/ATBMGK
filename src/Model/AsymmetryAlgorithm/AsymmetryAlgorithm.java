@@ -9,12 +9,12 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public interface AsymmetryAlgorithm {
-	public void genKey(int keySize) throws NoSuchAlgorithmException, IOException;
+	public boolean genKey(int keySize) throws NoSuchAlgorithmException, IOException;
 
-	public String encryptBase64(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, IllegalBlockSizeException, BadPaddingException;
 
-	public String decryptBase64(String data) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException,
+	public String decrypt(String data) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException,
 			NoSuchAlgorithmException, NoSuchPaddingException;
 
 	public void loadKey() throws Exception;

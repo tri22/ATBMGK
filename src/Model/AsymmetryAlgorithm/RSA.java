@@ -1,11 +1,17 @@
 package Model.AsymmetryAlgorithm;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -16,30 +22,57 @@ import javax.crypto.NoSuchPaddingException;
 public class RSA implements AsymmetryAlgorithm {
     private PublicKey publicKey;
     private PrivateKey privateKey;
+    private static final String PUBLIC_KEY_PATH = "src/Model/AsymmetryAlgorithm/keys/public.key";
+    private static final String PRIVATE_KEY_PATH = "src/Model/AsymmetryAlgorithm/keys/private.key";
 
-    public void genKey(int size) {
+    public boolean genKey(int size) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             keyGen.initialize(size);
             KeyPair keyPair = keyGen.generateKeyPair();
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
-        } catch (NoSuchAlgorithmException e) {
+
+            return saveKeyToFile();
+        } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
+    
+    private boolean saveKeyToFile() throws IOException {
+        if (publicKey == null || privateKey == null) return false;
 
-    public byte[] encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+        Files.write(Paths.get(PUBLIC_KEY_PATH), publicKey.getEncoded());
+        Files.write(Paths.get(PRIVATE_KEY_PATH), privateKey.getEncoded());
+        return true;
+    }
+
+
+    @Override
+    public void loadKey() throws Exception {
+        byte[] publicBytes = Files.readAllBytes(Paths.get(PUBLIC_KEY_PATH));
+        byte[] privateBytes = Files.readAllBytes(Paths.get(PRIVATE_KEY_PATH));
+
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(publicBytes);
+        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(privateBytes);
+
+        publicKey = keyFactory.generatePublic(pubSpec);
+        privateKey = keyFactory.generatePrivate(privSpec);
+    }
+
+
+    public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        return cipher.doFinal(data.getBytes());
+        return encrypt(data.getBytes());
     }
 
     public String encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException {
-        byte[] encryptedBytes = encrypt(new String(data));
-        return Base64.getEncoder().encodeToString(encryptedBytes);
+    	Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        return Base64.getEncoder().encodeToString(cipher.doFinal(data));
     }
 
     public String decrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
@@ -55,40 +88,5 @@ public class RSA implements AsymmetryAlgorithm {
         return new String(decryptedBytes);
     }
 
-    @Override
-    public String encryptBase64(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-            InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        return encrypt(data.getBytes());
-    }
 
-    @Override
-    public String decryptBase64(String data) throws IllegalBlockSizeException, BadPaddingException,
-            InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return decrypt(data);
-    }
-
-    @Override
-    public void loadKey() throws Exception {
-        // Hiện tại chưa có logic nạp khóa từ bên ngoài.
-        throw new UnsupportedOperationException("Chức năng loadKey chưa được hỗ trợ.");
-    }
-
-    public static void main(String[] args) {
-        try {
-            RSA rsa = new RSA();
-            rsa.genKey(2048);
-
-            String original = "Hello RSA!";
-            System.out.println("Original: " + original);
-
-            String encrypted = rsa.encryptBase64(original);
-            System.out.println("Encrypted: " + encrypted);
-
-            String decrypted = rsa.decryptBase64(encrypted);
-            System.out.println("Decrypted: " + decrypted);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

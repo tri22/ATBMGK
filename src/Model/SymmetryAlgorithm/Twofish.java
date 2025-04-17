@@ -6,9 +6,16 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Base64;
@@ -17,28 +24,54 @@ public class Twofish implements SymmetryAlgorithm {
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
+    private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/Twofish.key";
 
     private SecretKey key;
 
     @Override
-    public SecretKey genkey() throws NoSuchAlgorithmException {
+    public boolean genkey() throws NoSuchAlgorithmException {
         byte[] keyBytes = new byte[16];
         new java.security.SecureRandom().nextBytes(keyBytes);
         key = new SecretKeySpec(keyBytes, "Twofish");
-        return key;
+        return saveKeyToFile();
     }
 
     @Override
-    public SecretKey genkey(int keySize) throws NoSuchAlgorithmException {
+    public boolean genkey(int keySize) throws NoSuchAlgorithmException {
         byte[] keyBytes = new byte[keySize / 8];
         new java.security.SecureRandom().nextBytes(keyBytes);
         key = new SecretKeySpec(keyBytes, "Twofish");
-        return key;
+        return saveKeyToFile();
     }
 
     @Override
-    public void loadKey(SecretKey key) {
+    public void loadKey( ) {
+        try {
+			loadKeyFromFile();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public void loadKeyFromFile() throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(KEY_PATH));
+        SecretKey key = new SecretKeySpec(encoded, "Twofish");
         this.key = key;
+    }
+    
+    public boolean saveKeyToFile() {
+        try {
+            if (key == null) return false;
+
+            byte[] encoded = key.getEncoded();
+            Files.write(Paths.get(KEY_PATH), encoded);
+            return true;
+
+        } catch (IOException e) {
+            e.printStackTrace(); // Hoặc log ra UI
+            return false;
+        }
     }
 
     private byte[] process(boolean encrypt, byte[] input) throws CryptoException {
@@ -52,17 +85,34 @@ public class Twofish implements SymmetryAlgorithm {
         return result;
     }
 
-    @Override
-    public String encryptBase64(String text) throws Exception {
-        byte[] encrypted = process(true, text.getBytes());
-        return Base64.getEncoder().encodeToString(encrypted);
-    }
+	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+			IllegalBlockSizeException, BadPaddingException, CryptoException {
+		byte[] rawData = data.getBytes();
+		byte[] encryptedData = process(true, rawData);
+		return Base64.getEncoder().encodeToString(encryptedData);
 
-    @Override
-    public String decryptBase64(byte[] data) throws Exception {
-        byte[] decrypted = process(false, Base64.getDecoder().decode(data));
-        return new String(decrypted);
-    }
+	}
+
+	public String encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+			IllegalBlockSizeException, BadPaddingException, CryptoException {
+		byte[] encryptedData = process(true, data);
+		return Base64.getEncoder().encodeToString(encryptedData);
+
+	}
+
+	public String decrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, CryptoException {
+		byte[] encryptedData = Base64.getDecoder().decode(data);
+		return decrypt(encryptedData);
+	}
+
+	public String decrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, CryptoException {
+		byte[] decryptedData = process(false, data);
+		return new String(decryptedData);
+
+	}
+
 
     @Override
     public boolean encryptFile(String srcf, String desf) throws Exception {
@@ -90,15 +140,5 @@ public class Twofish implements SymmetryAlgorithm {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        Twofish tf = new Twofish();
-        SecretKey key = tf.genkey();
-        tf.loadKey(key);
 
-        String plain = "Twofish";
-        String encrypted = tf.encryptBase64(plain);
-        System.out.println("Encrypted: " + encrypted);
-        String decrypted = tf.decryptBase64(encrypted.getBytes());
-        System.out.println("Decrypted: " + decrypted);
-    }
 }

@@ -17,7 +17,7 @@ public class SubstitutionCipher implements BasicAlgorithm{
 	        genKey();
 	    }
 
-	    public void genKey() {
+	    public boolean genKey() {
 	        List<Character> list = new ArrayList<>();
 	        for (char c : ALPHABET.toCharArray()) {
 	            list.add(c);
@@ -27,6 +27,7 @@ public class SubstitutionCipher implements BasicAlgorithm{
 	            encryptMap.put(ALPHABET.charAt(i), list.get(i));
 	            decryptMap.put(list.get(i), ALPHABET.charAt(i));
 	        }
+	        return true;
 	    }
 
 	    public String encrypt(String text) {

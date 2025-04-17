@@ -1,7 +1,7 @@
 package Model.BasicAlgorithm;
 
 public interface BasicAlgorithm {
-	void genKey();
+	boolean genKey();
 
 	String encrypt(String text);
 

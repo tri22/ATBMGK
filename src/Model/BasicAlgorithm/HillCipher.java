@@ -13,8 +13,9 @@ public class HillCipher implements BasicAlgorithm {
     }
 
     // Sinh ma trận khóa ngẫu nhiên hợp lệ
-    public void genKey() {
+    public boolean genKey() {
         key = generateKey(MATRIX_SIZE, MOD);
+        return key != null;
     }
 
     // Tạo ma trận khóa ngẫu nhiên

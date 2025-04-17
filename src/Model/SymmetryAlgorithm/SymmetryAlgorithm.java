@@ -10,16 +10,16 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 
 public interface SymmetryAlgorithm {
-	public SecretKey genkey() throws NoSuchAlgorithmException, Exception;
+	public boolean genkey() throws NoSuchAlgorithmException, Exception;
 
-	public SecretKey genkey(int keySize) throws NoSuchAlgorithmException;
+	public boolean genkey(int keySize) throws NoSuchAlgorithmException;
 
-	public void loadKey(SecretKey key);
+	public void loadKey();
 
-	public String encryptBase64(String text) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String encrypt(String text) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, Exception;
 
-	public String decryptBase64(byte[] data) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String decrypt(String data) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, Exception;
 
 	public boolean encryptFile(String srcf, String desf) throws NoSuchAlgorithmException, NoSuchPaddingException,
@@ -27,4 +27,5 @@ public interface SymmetryAlgorithm {
 
 	public boolean decryptFile(String srcf, String desf) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception;
+
 }
