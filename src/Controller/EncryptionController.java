@@ -8,23 +8,22 @@ import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-
 import Model.AsymmetryAlgorithm.*;
 import Model.BasicAlgorithm.*;
+import Model.HashAlgo.*;
 import Model.SymmetryAlgorithm.*;
-
 
 public class EncryptionController {
 	private final Map<String, BasicAlgorithm> basics = new HashMap<>();
 	private final Map<String, SymmetryAlgorithm> symmetrics = new HashMap<>();
-	private final Map<String, AsymmetryAlgorithm> asymmetrics = new HashMap<>();;
+	private final Map<String, AsymmetryAlgorithm> asymmetrics = new HashMap<>();
+	private final Map<String, HashAlgo> hash = new HashMap<>();
 
 	public EncryptionController() {
+		hash.put("MD5", new MD5());
         // Basic Algorithms
         basics.put("Ceasar", new CaesarCipher());
         basics.put("Affine", new AffineCipher());
-        basics.put("Hill", new HillCipher());
         basics.put("Substitution", new SubstitutionCipher());
         basics.put("Vigenere", new VigenereCipher());
 
@@ -54,7 +53,7 @@ public class EncryptionController {
         if (asymmetrics.containsKey(algorithm)) {
             return asymmetrics.get(algorithm).encrypt(data);
         }
-        return "Thuật toán chưa được hỗ trợ: " + algorithm;
+        return hash.get(algorithm).hash(data);
     }
     public boolean genKey(String algorithm, int keySize) throws Exception {
         if (basics.containsKey(algorithm)) {
@@ -71,18 +70,19 @@ public class EncryptionController {
     }
     
     public void loadKey(String algorithm) throws Exception {
+    	if (basics.containsKey(algorithm)) {
+            basics.get(algorithm).loadKey();
+         }
         if (symmetrics.containsKey(algorithm)) {
             symmetrics.get(algorithm).loadKey();
         }
         if (asymmetrics.containsKey(algorithm)) {
              asymmetrics.get(algorithm).loadKey();
         }
-		
-        
     }
 
 	public String decrypt(String algorithm, String encryptedData) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, Exception {
-		   if (basics.containsKey(algorithm)) {
+		   	if (basics.containsKey(algorithm)) {
 	            return basics.get(algorithm).decrypt(encryptedData);
 	        }
 	        if (symmetrics.containsKey(algorithm)) {

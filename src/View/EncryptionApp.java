@@ -46,6 +46,7 @@ public class EncryptionApp {
         cardPanel.add(createSymmetricPanel(), "Đối xứng");
         cardPanel.add(createAsymmetricPanel(), "Bất đối xứng");
         cardPanel.add(createClassicalPanel(), "Cổ điển");
+        cardPanel.add(createHashPanel(), "Hash");
 
         frame.add(topPanel, BorderLayout.NORTH);
         frame.add(cardPanel, BorderLayout.CENTER);
@@ -57,7 +58,7 @@ public class EncryptionApp {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.add(new JLabel("Chọn loại mã hóa:"));
 
-        String[] types = {"Đối xứng", "Bất đối xứng", "Cổ điển"};
+        String[] types = {"Đối xứng", "Bất đối xứng", "Cổ điển","Hash"};
         typeComboBox = new JComboBox<>(types);
         typeComboBox.addActionListener(e -> {
             String selected = (String) typeComboBox.getSelectedItem();
@@ -82,8 +83,13 @@ public class EncryptionApp {
 
     private JPanel createClassicalPanel() {
         return createEncryptionPanel(new String[]{
-                "Ceasar", "Hill", "Vigenere", "Substitution", "Affine", "MD5"
-        }, true, false);  // Thêm Gen Key cho các thuật toán cổ điển
+                "Ceasar", "Vigenere", "Substitution", "Affine", "MD5"
+        }, true, true);  
+    }
+    private JPanel createHashPanel() {
+        return createEncryptionPanel(new String[]{
+                 "MD5"
+        }, false, true);  
     }
 
     private JPanel createEncryptionPanel(String[] algorithms, boolean showKeyControls, boolean showLoadFile) {
@@ -178,11 +184,11 @@ public class EncryptionApp {
             generateKeyButton.addActionListener(e -> generateKeyAction());
             panel.add(generateKeyButton);
 
-            if (!algorithms[0].equals("Ceasar")) {
-                loadKeyButton = new JButton("Load Key");
-                loadKeyButton.addActionListener(e -> loadKeyAction());
-                panel.add(loadKeyButton);
-            }
+            
+			loadKeyButton = new JButton("Load Key");
+			loadKeyButton.addActionListener(e -> loadKeyAction());
+			panel.add(loadKeyButton);
+
         }
 
         return panel;

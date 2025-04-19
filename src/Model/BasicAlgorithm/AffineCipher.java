@@ -1,11 +1,15 @@
 package Model.BasicAlgorithm;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Random;
 
 public class AffineCipher implements BasicAlgorithm{
 	int [] key ;
     private static final int N = 26;
-    
+    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/affine.key";
     public AffineCipher() {
     	genKey();
     }
@@ -16,11 +20,40 @@ public class AffineCipher implements BasicAlgorithm{
 		int a;
 		do {
 			a = rand.nextInt(N);
-		} while (gcd(a, N) != 1); // Chọn a sao cho gcd(a, N) = 1
-		int b = rand.nextInt(N); // Chọn b bất kỳ trong khoảng [0, N-1]
+		} while (gcd(a, N) != 1); 
+		int b = rand.nextInt(N); 
 		key = new int[] { a, b };
-		return key.length == 2 && key[0] != 0 && key[1] != 0;
+		return saveKeyToFile(KEY_PATH);
 	}
+    
+    @Override
+	public void loadKey() {
+    	loadKeyFromFile(KEY_PATH);
+	}
+    
+    public boolean saveKeyToFile(String path) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            writer.write(key[0] + "," + key[1]);
+            return true; // Ghi file thành công
+        } catch (Exception e) {
+            System.err.println("Lỗi khi ghi key vào file: " + e.getMessage());
+            return false; // Ghi file thất bại
+        }
+    }
+
+
+    public void loadKeyFromFile(String path) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line = reader.readLine();
+            if (line != null) {
+                String[] parts = line.split(",");
+                key = new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1])};
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi đọc key từ file: " + e.getMessage());
+        }
+    }
+
 
 	@Override
 	public String encrypt(String plaintext) {
@@ -82,18 +115,8 @@ public class AffineCipher implements BasicAlgorithm{
         throw new IllegalArgumentException("a không có nghịch đảo modulo theo " + mod);
     }
 
+	
+
   
 
-	
-	
-	  public static void main(String[] args) {
-	        AffineCipher af = new AffineCipher();
-	        
-	        String plaintext = "Hello World!";
-	        String encryptedText = af.encrypt(plaintext);
-	        System.out.println("Encrypted: " + encryptedText);
-	        
-	        String decryptedText = af.decrypt(encryptedText);
-	        System.out.println("Decrypted: " + decryptedText);
-	    }
 }

@@ -1,12 +1,28 @@
 package Model.BasicAlgorithm;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 
 public class VigenereCipher implements BasicAlgorithm {
-
+	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/vigenere.key";
     private String key = "";
 
-    // Sinh khóa ngẫu nhiên với độ dài chỉ định
+    
+    
+    public String getKey() {
+		return key;
+	}
+
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	// Sinh khóa ngẫu nhiên với độ dài chỉ định
     public static String generateRandomKey(int length) {
         Random rand = new Random();
         StringBuilder key = new StringBuilder();
@@ -15,6 +31,37 @@ public class VigenereCipher implements BasicAlgorithm {
             key.append(randomChar);
         }
         return key.toString();
+    }
+    
+    @Override
+	public void loadKey() {
+    	loadKeyFromFile(KEY_PATH);
+	}
+    
+    public boolean saveKeyToFile(String path) {
+        try {
+            File file = new File(path);
+            file.getParentFile().mkdirs(); // Tạo thư mục nếu chưa có
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write(key);
+            }
+
+            return true;
+        } catch (IOException e) {
+            System.err.println("Lỗi khi ghi key vào file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean loadKeyFromFile(String path) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            key = reader.readLine();
+            return key != null && !key.isEmpty();
+        } catch (IOException e) {
+            System.err.println("Lỗi khi đọc key từ file: " + e.getMessage());
+            return false;
+        }
     }
 
     // Mã hóa văn bản với key
@@ -61,7 +108,7 @@ public class VigenereCipher implements BasicAlgorithm {
     @Override
     public boolean genKey() {
         this.key = generateRandomKey(5);
-        return this.key != null;
+        return saveKeyToFile(KEY_PATH);
     }
 
     // Dùng key đã tạo để mã hóa
@@ -73,21 +120,12 @@ public class VigenereCipher implements BasicAlgorithm {
         return encrypt(text, key);
     }
 
-    // Dùng key đã tạo để giải mã
     @Override
     public String decrypt(String text) {
         if (key.isEmpty()) {
             throw new IllegalStateException("Key is not generated. Call genKey() first.");
         }
         return decrypt(text, key);
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
     public static void main(String[] args) {
@@ -103,4 +141,6 @@ public class VigenereCipher implements BasicAlgorithm {
         System.out.println("Encrypted:  " + encrypted);
         System.out.println("Decrypted:  " + decrypted);
     }
+
+	
 }

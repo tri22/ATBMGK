@@ -6,6 +6,8 @@ public interface BasicAlgorithm {
 	String encrypt(String text);
 
 	String decrypt(String text);
-
+	
+	void loadKey();
+	
 
 }

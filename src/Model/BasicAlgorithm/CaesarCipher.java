@@ -1,10 +1,16 @@
 package Model.BasicAlgorithm;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 
 public class CaesarCipher implements BasicAlgorithm {
     private int shift;
-
+    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/caesar.key";
+    
     public CaesarCipher() {
 //        genKey();
     }
@@ -12,7 +18,34 @@ public class CaesarCipher implements BasicAlgorithm {
     @Override
     public boolean genKey() {
         shift = new Random().nextInt(25) + 1;
-        return true;
+        return saveKeyToFile(KEY_PATH);
+    }
+    
+    @Override
+	public void loadKey() {
+    	loadKeyFromFile(KEY_PATH);
+		
+	}
+    
+    public boolean saveKeyToFile(String path) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            writer.write(String.valueOf(shift));
+            return true;
+        } catch (IOException e) {
+            System.err.println("Lỗi khi ghi key vào file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean loadKeyFromFile(String path) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line = reader.readLine();
+            shift = Integer.parseInt(line.trim());
+            return true;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi đọc key từ file: " + e.getMessage());
+            return false;
+        }
     }
 
     @Override
@@ -53,4 +86,6 @@ public class CaesarCipher implements BasicAlgorithm {
         String decrypted = cipher.decrypt(encrypted);
         System.out.println("Decrypted: " + decrypted);
     }
+
+	
 }
