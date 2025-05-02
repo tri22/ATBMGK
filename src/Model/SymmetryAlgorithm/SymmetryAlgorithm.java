@@ -3,6 +3,7 @@ package Model.SymmetryAlgorithm;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -12,7 +13,7 @@ import javax.crypto.SecretKey;
 public interface SymmetryAlgorithm {
 	public boolean genkey() throws NoSuchAlgorithmException, Exception;
 
-	public boolean genkey(int keySize) throws NoSuchAlgorithmException;
+	public boolean genkey(int keySize) throws NoSuchAlgorithmException, NoSuchProviderException;
 
 	public void loadKey();
 
@@ -22,10 +23,13 @@ public interface SymmetryAlgorithm {
 	public String decrypt(String data) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, Exception;
 
-	public boolean encryptFile(String srcf, String desf) throws NoSuchAlgorithmException, NoSuchPaddingException,
+	public String encryptFile(String src) throws NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, Exception;
 
-	public boolean decryptFile(String srcf, String desf) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String decryptFile(String encryptedFilePath) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception;
+	public SecretKey getSecretKey();
+
+	public void setSecretKey(byte[] decryptedSymmetricKeyBytes);
 
 }

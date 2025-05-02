@@ -18,7 +18,10 @@ import javax.crypto.NoSuchPaddingException;
 public class ThreeDES implements SymmetryAlgorithm {
     private SecretKey secretKey;
     private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/3des.key";
-
+    public String decrypt_path = "";
+    public String encrypt_path = "";
+    public String mode ="";
+    public  String padding ="";
 
     @Override
     public boolean genkey() throws NoSuchAlgorithmException {
@@ -93,32 +96,63 @@ public class ThreeDES implements SymmetryAlgorithm {
 	}
 
     @Override
-    public boolean encryptFile(String srcf, String desf) throws NoSuchAlgorithmException, NoSuchPaddingException,
+    public String encryptFile(String src) throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        Cipher cipher = Cipher.getInstance("DESede");
+    	this.decrypt_path = generateFileName(src,"decrypt");
+    	this.encrypt_path = generateFileName(src,"encrypt");
+    	Cipher cipher = Cipher.getInstance("DESede");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-        try (FileInputStream fis = new FileInputStream(srcf);
-             FileOutputStream fos = new FileOutputStream(desf)) {
+        try (FileInputStream fis = new FileInputStream(src);
+             FileOutputStream fos = new FileOutputStream(encrypt_path)) {
             byte[] inputBytes = fis.readAllBytes();
             byte[] outputBytes = cipher.doFinal(inputBytes);
             fos.write(outputBytes);
         }
-        return true;
+        return encrypt_path;
     }
 
     @Override
-    public boolean decryptFile(String srcf, String desf) throws InvalidKeyException, NoSuchAlgorithmException,
+    public String decryptFile(String encryptedFilePath) throws InvalidKeyException, NoSuchAlgorithmException,
             NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
         Cipher cipher = Cipher.getInstance("DESede");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
-        try (FileInputStream fis = new FileInputStream(srcf);
-             FileOutputStream fos = new FileOutputStream(desf)) {
+        try (FileInputStream fis = new FileInputStream(encryptedFilePath);
+             FileOutputStream fos = new FileOutputStream(decrypt_path)) {
             byte[] inputBytes = fis.readAllBytes();
             byte[] outputBytes = cipher.doFinal(inputBytes);
             fos.write(outputBytes);
         }
-        return true;
+        return decrypt_path;
+    }
+    private String generateFileName(String originalPath, String suffix) {
+        int dotIndex = originalPath.lastIndexOf('.');
+        if (dotIndex != -1) {
+            return originalPath.substring(0, dotIndex) + "_" + suffix + originalPath.substring(dotIndex);
+        } else {
+            return originalPath + "_" + suffix;
+        }
+    }
+    
+    @Override
+ 	public SecretKey getSecretKey() {
+ 		// TODO Auto-generated method stub
+ 		return this.secretKey;
+ 	}
+    
+    @Override
+   	public void setSecretKey(byte[] keyBytes) {
+   		this.secretKey = new SecretKeySpec(keyBytes, "DESede");
+   	}
+
+    public static void main(String[] args) throws Exception {
+        ThreeDES camellia = new ThreeDES();
+        System.out.println("Key generated: " + camellia.genkey(112)); // Example with 128 bits key
+
+        String src = "C:\\Users\\Trung Tri\\Documents\\test.txt";
+        String path=camellia.encryptFile(src);
+        System.out.println("Encrypted file: " +path );
+        System.out.println("Decrypted file: " + camellia.decryptFile(path));
     }
 }

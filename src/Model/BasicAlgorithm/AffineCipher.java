@@ -9,7 +9,7 @@ import java.util.Random;
 public class AffineCipher implements BasicAlgorithm{
 	int [] key ;
     private static final int N = 26;
-    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/affine.key";
+    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/affine.txt";
     public AffineCipher() {
     	genKey();
     }

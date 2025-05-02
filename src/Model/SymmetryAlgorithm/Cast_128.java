@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -14,16 +16,25 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import java.util.Base64;
 
 public class Cast_128 implements SymmetryAlgorithm {
-
+    static {
+        // Thêm provider Bouncy Castle
+        Security.addProvider(new BouncyCastleProvider());
+    }
     private SecretKey secretKey;
     private Cipher cipher;
     private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/cast_128.key";
-
+    public String decrypt_path = "";
+    public String encrypt_path = "";
+    public String mode ="";
+    public  String padding ="";
 
     @Override
     public boolean genkey() throws NoSuchAlgorithmException {
@@ -101,10 +112,12 @@ public class Cast_128 implements SymmetryAlgorithm {
 	}
 
     @Override
-    public boolean encryptFile(String srcf, String desf) throws NoSuchAlgorithmException, NoSuchPaddingException,
+    public String encryptFile(String src) throws NoSuchAlgorithmException, NoSuchPaddingException,
             InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        FileInputStream fis = new FileInputStream(srcf);
-        FileOutputStream fos = new FileOutputStream(desf);
+    	this.decrypt_path = generateFileName(src,"decrypt");
+    	this.encrypt_path = generateFileName(src,"encrypt");
+    	FileInputStream fis = new FileInputStream(src);
+        FileOutputStream fos = new FileOutputStream(encrypt_path);
         cipher = Cipher.getInstance("CAST5");
         cipher.init(Cipher.ENCRYPT_MODE, this.secretKey);
         CipherInputStream cis = new CipherInputStream(fis, cipher);
@@ -115,14 +128,14 @@ public class Cast_128 implements SymmetryAlgorithm {
         }
         cis.close();
         fos.close();
-        return true;
+        return encrypt_path;
     }
 
     @Override
-    public boolean decryptFile(String srcf, String desf) throws InvalidKeyException, NoSuchAlgorithmException,
+    public String decryptFile(String encryptedFilePath) throws InvalidKeyException, NoSuchAlgorithmException,
             NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        FileInputStream fis = new FileInputStream(srcf);
-        FileOutputStream fos = new FileOutputStream(desf);
+        FileInputStream fis = new FileInputStream(encryptedFilePath);
+        FileOutputStream fos = new FileOutputStream(decrypt_path);
         cipher = Cipher.getInstance("CAST5");
         cipher.init(Cipher.DECRYPT_MODE, this.secretKey);
         CipherOutputStream cos = new CipherOutputStream(fos, cipher);
@@ -134,6 +147,34 @@ public class Cast_128 implements SymmetryAlgorithm {
         cos.close();
         fis.close();
         fos.close();
-        return true;
+        return decrypt_path;
+    }
+    private String generateFileName(String originalPath, String suffix) {
+        int dotIndex = originalPath.lastIndexOf('.');
+        if (dotIndex != -1) {
+            return originalPath.substring(0, dotIndex) + "_" + suffix + originalPath.substring(dotIndex);
+        } else {
+            return originalPath + "_" + suffix;
+        }
+    }
+    
+	@Override
+	public SecretKey getSecretKey() {
+		// TODO Auto-generated method stub
+		return this.secretKey;
+	}
+	
+	@Override
+	public void setSecretKey(byte[] keyBytes) {
+		this.secretKey = new SecretKeySpec(keyBytes, "CAST5");
+	}
+    
+    public static void main(String[] args) throws Exception {
+    	Cast_128 aes = new Cast_128();
+    	System.out.println(aes.genkey(128));
+    	String src ="C:\\Users\\Trung Tri\\Documents\\test.txt";
+    	String path=aes.encryptFile(src);
+        System.out.println("Encrypted file: " +path );
+        System.out.println("Decrypted file: " + aes.decryptFile(path));
     }
 }

@@ -8,6 +8,5 @@ public interface BasicAlgorithm {
 	String decrypt(String text);
 	
 	void loadKey();
-	
 
 }

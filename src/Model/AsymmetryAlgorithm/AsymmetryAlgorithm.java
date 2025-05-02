@@ -11,13 +11,18 @@ import javax.crypto.NoSuchPaddingException;
 public interface AsymmetryAlgorithm {
 	public boolean genKey(int keySize) throws NoSuchAlgorithmException, IOException;
 
-	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-			InvalidKeyException, IllegalBlockSizeException, BadPaddingException;
+	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+			IllegalBlockSizeException, BadPaddingException;
 
 	public String decrypt(String data) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException,
 			NoSuchAlgorithmException, NoSuchPaddingException;
 
+	public String encryptFile(String src, String algo) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+			IllegalBlockSizeException, BadPaddingException, Exception;
+
+	public String decryptFile(String algo) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException,
+			NoSuchAlgorithmException, NoSuchPaddingException, Exception;
+
 	public void loadKey() throws Exception;
 
-	
 }

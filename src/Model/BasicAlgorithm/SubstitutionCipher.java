@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class SubstitutionCipher implements BasicAlgorithm{
 	private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/substitution.key";
+	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/substitution.txt";
 	private Map<Character, Character> encryptMap = new HashMap<>();
 	private Map<Character, Character> decryptMap = new HashMap<>();
 

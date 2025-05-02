@@ -25,22 +25,25 @@ public class Twofish implements SymmetryAlgorithm {
         Security.addProvider(new BouncyCastleProvider());
     }
     private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/Twofish.key";
-
+    public String decrypt_path = "";
+    public String encrypt_path = "";
+    public String mode ="";
+    public  String padding ="";
     private SecretKey key;
 
     @Override
-    public boolean genkey() throws NoSuchAlgorithmException {
+    public boolean genkey() throws Exception {
         byte[] keyBytes = new byte[16];
         new java.security.SecureRandom().nextBytes(keyBytes);
-        key = new SecretKeySpec(keyBytes, "Twofish");
+        key = new SecretKeySpec(keyBytes, "RAW");
         return saveKeyToFile();
     }
 
     @Override
-    public boolean genkey(int keySize) throws NoSuchAlgorithmException {
+    public boolean genkey(int keySize) {
         byte[] keyBytes = new byte[keySize / 8];
         new java.security.SecureRandom().nextBytes(keyBytes);
-        key = new SecretKeySpec(keyBytes, "Twofish");
+        key = new SecretKeySpec(keyBytes, "RAW");
         return saveKeyToFile();
     }
 
@@ -115,19 +118,21 @@ public class Twofish implements SymmetryAlgorithm {
 
 
     @Override
-    public boolean encryptFile(String srcf, String desf) throws Exception {
-        byte[] content = readFile(srcf);
+    public String encryptFile(String src) throws Exception {
+    	this.decrypt_path = generateFileName(src,"decrypt");
+    	this.encrypt_path = generateFileName(src,"encrypt");
+    	byte[] content = readFile(src);
         byte[] encrypted = process(true, content);
-        writeFile(desf, encrypted);
-        return true;
+        writeFile(encrypt_path, encrypted);
+        return encrypt_path;
     }
 
     @Override
-    public boolean decryptFile(String srcf, String desf) throws Exception {
-        byte[] content = readFile(srcf);
+    public String decryptFile(String encryptedFilePath) throws Exception {
+        byte[] content = readFile(encryptedFilePath);
         byte[] decrypted = process(false, content);
-        writeFile(desf, decrypted);
-        return true;
+        writeFile(decrypt_path, decrypted);
+        return decrypt_path ;
     }
 
     private byte[] readFile(String path) throws IOException {
@@ -139,6 +144,36 @@ public class Twofish implements SymmetryAlgorithm {
             fos.write(data);
         }
     }
+    
+    private String generateFileName(String originalPath, String suffix) {
+        int dotIndex = originalPath.lastIndexOf('.');
+        if (dotIndex != -1) {
+            return originalPath.substring(0, dotIndex) + "_" + suffix + originalPath.substring(dotIndex);
+        } else {
+            return originalPath + "_" + suffix;
+        }
+    }
+    
+    @Override
+ 	public SecretKey getSecretKey() {
+ 		// TODO Auto-generated method stub
+ 		return this.key;
+ 	}
+    
+    @Override
+   	public void setSecretKey(byte[] keyBytes) {
+   		this.key = new SecretKeySpec(keyBytes, "Twofish");
+   	}
 
+    public static void main(String[] args) throws Exception {
+        Twofish camellia = new Twofish();
+        System.out.println("Key generated: " + camellia.genkey(128)); // Example with 128 bits key
+
+        String src = "C:\\Users\\Trung Tri\\Documents\\test.txt";
+        String path=camellia.encryptFile(src);
+        System.out.println("Encrypted file: " +path );
+        System.out.println("Decrypted file: " + camellia.decryptFile(path));
+    }
+    
 
 }

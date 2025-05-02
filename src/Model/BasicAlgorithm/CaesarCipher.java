@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class CaesarCipher implements BasicAlgorithm {
     private int shift;
-    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/caesar.key";
+    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/caesar.txt";
     
     public CaesarCipher() {
 //        genKey();
@@ -23,6 +23,7 @@ public class CaesarCipher implements BasicAlgorithm {
     
     @Override
 	public void loadKey() {
+    	System.out.println(shift);
     	loadKeyFromFile(KEY_PATH);
 		
 	}

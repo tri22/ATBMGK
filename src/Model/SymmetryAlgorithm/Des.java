@@ -13,7 +13,11 @@ import javax.crypto.spec.SecretKeySpec;
 public class Des implements SymmetryAlgorithm {
 	private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/des.key";
     private SecretKey currentKey;
-
+    public String decrypt_path = "";
+    public String encrypt_path = "";
+    public String mode = "";  
+    public String padding = "";  
+    
     @Override
     public boolean genkey() throws NoSuchAlgorithmException {
         KeyGenerator generator = KeyGenerator.getInstance("DES");
@@ -25,7 +29,10 @@ public class Des implements SymmetryAlgorithm {
     @Override
     public boolean genkey(int keySize) throws NoSuchAlgorithmException {
         // DES chỉ hỗ trợ key 56 bit nên tham số keySize bị bỏ qua
-        return genkey();
+    	  KeyGenerator generator = KeyGenerator.getInstance("DES");
+          generator.init(keySize);
+          this.currentKey = generator.generateKey();
+          return saveKeyToFile();
     }
 
     @Override
@@ -87,38 +94,68 @@ public class Des implements SymmetryAlgorithm {
 	}
 
     @Override
-    public boolean encryptFile(String srcf, String desf) throws Exception {
+    public String encryptFile(String src) throws Exception {
         if (currentKey == null) throw new Exception("Key is not initialized");
+        this.decrypt_path = generateFileName(src,"decrypt");
+        this.encrypt_path = generateFileName(src,"encrypt");
         Cipher cipher = Cipher.getInstance("DES");
         cipher.init(Cipher.ENCRYPT_MODE, currentKey);
 
-        try (FileInputStream fis = new FileInputStream(new File(srcf));
-             CipherOutputStream cos = new CipherOutputStream(new FileOutputStream(new File(desf)), cipher)) {
+        try (FileInputStream fis = new FileInputStream(new File(src));
+             CipherOutputStream cos = new CipherOutputStream(new FileOutputStream(new File(encrypt_path)), cipher)) {
             byte[] buffer = new byte[1024];
             int read;
             while ((read = fis.read(buffer)) != -1) {
                 cos.write(buffer, 0, read);
             }
         }
-        return true;
+        return encrypt_path;
     }
 
     @Override
-    public boolean decryptFile(String srcf, String desf) throws Exception {
+    public String decryptFile(String encryptedFilePath) throws Exception {
         if (currentKey == null) throw new Exception("Key is not initialized");
         Cipher cipher = Cipher.getInstance("DES");
         cipher.init(Cipher.DECRYPT_MODE, currentKey);
 
-        try (CipherInputStream cis = new CipherInputStream(new FileInputStream(new File(srcf)), cipher);
-             FileOutputStream fos = new FileOutputStream(new File(desf))) {
+        try (CipherInputStream cis = new CipherInputStream(new FileInputStream(new File(encryptedFilePath)), cipher);
+             FileOutputStream fos = new FileOutputStream(new File(decrypt_path))) {
             byte[] buffer = new byte[1024];
             int read;
             while ((read = cis.read(buffer)) != -1) {
                 fos.write(buffer, 0, read);
             }
         }
-        return true;
+        return decrypt_path;
     }
+    private String generateFileName(String originalPath, String suffix) {
+        int dotIndex = originalPath.lastIndexOf('.');
+        if (dotIndex != -1) {
+            return originalPath.substring(0, dotIndex) + "_" + suffix + originalPath.substring(dotIndex);
+        } else {
+            return originalPath + "_" + suffix;
+        }
+    }
+    
+	@Override
+	public SecretKey getSecretKey() {
+		// TODO Auto-generated method stub
+		return this.currentKey;
+	}
+	
+	@Override
+	public void setSecretKey(byte[] keyBytes) {
+		this.currentKey = new SecretKeySpec(keyBytes, "DES");
+	}
 
+    public static void main(String[] args) throws Exception {
+        Des camellia = new Des();
+        System.out.println("Key generated: " + camellia.genkey(56)); // Example with 128 bits key
+
+        String src = "C:\\Users\\Trung Tri\\Documents\\test.txt";
+        String path=camellia.encryptFile(src);
+        System.out.println("Encrypted file: " +path );
+        System.out.println("Decrypted file: " + camellia.decryptFile(path));
+    }
     
 }

@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.Random;
 
 public class VigenereCipher implements BasicAlgorithm {
-	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/vigenere.key";
+	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/vigenere.txt";
     private String key = "";
 
     

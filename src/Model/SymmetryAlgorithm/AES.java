@@ -16,68 +16,69 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class AES implements SymmetryAlgorithm {
-    private SecretKey secretKey;
-    private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/aes.key";
+	private SecretKey secretKey;
+	private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/aes.txt";
+	public String decrypt_path = "";
+	public String encrypt_path = "";
+	public String mode = "";
+	public String padding = "";
 
+	@Override
+	public boolean genkey() throws NoSuchAlgorithmException {
+		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+		keyGen.init(128); // mặc định 128-bit
+		secretKey = keyGen.generateKey();
+		return saveKeyToFile();
+	}
 
-    @Override
-    public boolean genkey() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128); // mặc định 128-bit
-        secretKey = keyGen.generateKey();
-        return saveKeyToFile();
-    }
+	@Override
+	public boolean genkey(int keySize) throws NoSuchAlgorithmException {
+		KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+		keyGen.init(keySize);
+		secretKey = keyGen.generateKey();
+		return saveKeyToFile();
+	}
 
-    @Override
-    public boolean genkey(int keySize) throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(keySize);
-        secretKey = keyGen.generateKey();
-        return saveKeyToFile();
-    }
-    
-    public boolean saveKeyToFile() {
-        try {
-            if (secretKey == null) return false;
+	public boolean saveKeyToFile() {
+		try {
+			if (secretKey == null)
+				return false;
 
-            byte[] encoded = secretKey.getEncoded();
-            Files.write(Paths.get(KEY_PATH), encoded);
-            return true;
+			byte[] encoded = secretKey.getEncoded();
+			Files.write(Paths.get(KEY_PATH), encoded);
+			return true;
 
-        } catch (IOException e) {
-            e.printStackTrace(); // Hoặc log ra UI
-            return false;
-        }
-    }
+		} catch (IOException e) {
+			e.printStackTrace(); // Hoặc log ra UI
+			return false;
+		}
+	}
 
-
-
-    @Override
-    public void loadKey() {
-    	try {
+	@Override
+	public void loadKey() {
+		try {
 			loadKeyFromFile();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    }
-    
-    public void loadKeyFromFile() throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(KEY_PATH));
-        SecretKey key = new SecretKeySpec(encoded, "AES");
-        this.secretKey = key;
-    }
+	}
 
+	public void loadKeyFromFile() throws IOException {
+		byte[] encoded = Files.readAllBytes(Paths.get(KEY_PATH));
+		SecretKey key = new SecretKeySpec(encoded, "AES");
+		this.secretKey = key;
+	}
 
 	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
 			IllegalBlockSizeException, BadPaddingException {
-		 byte[] rawData = data.getBytes(); 
-		 return encrypt(rawData);
+		byte[] rawData = data.getBytes();
+		return encrypt(rawData);
 	}
 
 	public String encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
 			IllegalBlockSizeException, BadPaddingException {
-		Cipher cipher = Cipher.getInstance("AES");
+		Cipher cipher = Cipher.getInstance("AES" + mode + padding);
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		return Base64.getEncoder().encodeToString(cipher.doFinal(data));
 	}
@@ -89,41 +90,73 @@ public class AES implements SymmetryAlgorithm {
 
 	public String decrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-		Cipher cipher = Cipher.getInstance("AES");
+		Cipher cipher = Cipher.getInstance("AES" + mode + padding);
 		cipher.init(Cipher.DECRYPT_MODE, secretKey);
 		byte[] decryptedBytes = cipher.doFinal(data);
 		return new String(decryptedBytes);
 	}
 
-    @Override
-    public boolean encryptFile(String srcf, String desf) throws NoSuchAlgorithmException, NoSuchPaddingException,
-            InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+	@Override
+	public String encryptFile(String src) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+			IOException, IllegalBlockSizeException, BadPaddingException, Exception {
+		this.decrypt_path = generateFileName(src, "decrypt");
+		this.encrypt_path = generateFileName(src, "encrypt");
+		Cipher cipher = Cipher.getInstance("AES" + mode + padding);
+		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-        try (FileInputStream fis = new FileInputStream(srcf);
-             FileOutputStream fos = new FileOutputStream(desf)) {
-            byte[] inputBytes = fis.readAllBytes();
-            byte[] outputBytes = cipher.doFinal(inputBytes);
-            fos.write(outputBytes);
-        }
-        return true;
-    }
+		try (FileInputStream fis = new FileInputStream(src);
+				FileOutputStream fos = new FileOutputStream(encrypt_path)) {
+			byte[] inputBytes = fis.readAllBytes();
+			byte[] outputBytes = cipher.doFinal(inputBytes);
+			fos.write(outputBytes);
+		}
+		return encrypt_path;
+	}
 
-    @Override
-    public boolean decryptFile(String srcf, String desf) throws InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+	@Override
+	public String decryptFile(String encryptedFile) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			IOException, IllegalBlockSizeException, BadPaddingException, Exception {
+		Cipher cipher = Cipher.getInstance("AES" + mode + padding);
+		cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
-        try (FileInputStream fis = new FileInputStream(srcf);
-             FileOutputStream fos = new FileOutputStream(desf)) {
-            byte[] inputBytes = fis.readAllBytes();
-            byte[] outputBytes = cipher.doFinal(inputBytes);
-            fos.write(outputBytes);
-        }
-        return true;
-    }
+		try (FileInputStream fis = new FileInputStream(encryptedFile);
+				FileOutputStream fos = new FileOutputStream(decrypt_path)) {
+			byte[] inputBytes = fis.readAllBytes();
+			byte[] outputBytes = cipher.doFinal(inputBytes);
+			fos.write(outputBytes);
+		}
+		return decrypt_path;
+	}
+
+	private String generateFileName(String originalPath, String suffix) {
+		int dotIndex = originalPath.lastIndexOf('.');
+		if (dotIndex != -1) {
+			return originalPath.substring(0, dotIndex) + "_" + suffix + originalPath.substring(dotIndex);
+		} else {
+			return originalPath + "_" + suffix;
+		}
+	}
+	
+	@Override
+	public SecretKey getSecretKey() {
+		// TODO Auto-generated method stub
+		return this.secretKey;
+	}
+
+
+	@Override
+	public void setSecretKey(byte[] keyBytes) {
+		this.secretKey = new SecretKeySpec(keyBytes, "AES");
+	}
+	
+	
+	public static void main(String[] args) throws Exception {
+		AES aes = new AES();
+		System.out.println(aes.genkey(128));
+		String src = "C:\\Users\\Trung Tri\\Documents\\test.txt";
+		System.out.println(aes.encryptFile(src));
+	}
+
 
 
 
