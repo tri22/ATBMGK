@@ -1,29 +1,48 @@
 package Model.SymmetryAlgorithm;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Des implements SymmetryAlgorithm {
-	private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/des.key";
+	private static final String KEY_FOLDER       = "keys";
+	private static final String KEY_PATH = KEY_FOLDER+"/des.txt";
     private SecretKey currentKey;
     public String decrypt_path = "";
     public String encrypt_path = "";
     public String mode = "";  
     public String padding = "";  
+    public IvParameterSpec ivSpec;
+	  
+    public Des() {
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
+	}
     
+	@Override
+	public void generateIV() {
+        SecureRandom random = new SecureRandom();
+        byte[] iv = new byte[8]; 
+        random.nextBytes(iv);  
+        this.ivSpec = new IvParameterSpec(iv);  
+    }
+	
     @Override
     public boolean genkey() throws NoSuchAlgorithmException {
-        KeyGenerator generator = KeyGenerator.getInstance("DES");
-        generator.init(56);
-        this.currentKey = generator.generateKey();
-        return saveKeyToFile();
+        return genkey(56);
     }
 
     @Override
@@ -32,6 +51,7 @@ public class Des implements SymmetryAlgorithm {
     	  KeyGenerator generator = KeyGenerator.getInstance("DES");
           generator.init(keySize);
           this.currentKey = generator.generateKey();
+          generateIV();
           return saveKeyToFile();
     }
 
@@ -68,27 +88,35 @@ public class Des implements SymmetryAlgorithm {
 
 
 	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
+			IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
 		byte[] rawData = data.getBytes();
 		return encrypt(rawData);
 	}
 
 	public String encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
-		Cipher cipher = Cipher.getInstance("DES");
-		cipher.init(Cipher.ENCRYPT_MODE, currentKey);
+			IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+		Cipher cipher = Cipher.getInstance("DES"+ mode + padding);
+		if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.ENCRYPT_MODE, currentKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.ENCRYPT_MODE, currentKey);
+		}
 		return Base64.getEncoder().encodeToString(cipher.doFinal(data));
 	}
 
 	public String decrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		return decrypt(Base64.getDecoder().decode(data));
 	}
 
 	public String decrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-		Cipher cipher = Cipher.getInstance("DES");
-		cipher.init(Cipher.DECRYPT_MODE, currentKey);
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+		Cipher cipher = Cipher.getInstance("DES"+ mode + padding);
+		if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.DECRYPT_MODE, currentKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.DECRYPT_MODE, currentKey);
+		}
 		byte[] decryptedBytes = cipher.doFinal(data);
 		return new String(decryptedBytes);
 	}
@@ -98,9 +126,12 @@ public class Des implements SymmetryAlgorithm {
         if (currentKey == null) throw new Exception("Key is not initialized");
         this.decrypt_path = generateFileName(src,"decrypt");
         this.encrypt_path = generateFileName(src,"encrypt");
-        Cipher cipher = Cipher.getInstance("DES");
-        cipher.init(Cipher.ENCRYPT_MODE, currentKey);
-
+        Cipher cipher = Cipher.getInstance("DES"+ mode + padding);
+        if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.ENCRYPT_MODE, currentKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.ENCRYPT_MODE, currentKey);
+		}
         try (FileInputStream fis = new FileInputStream(new File(src));
              CipherOutputStream cos = new CipherOutputStream(new FileOutputStream(new File(encrypt_path)), cipher)) {
             byte[] buffer = new byte[1024];
@@ -115,9 +146,12 @@ public class Des implements SymmetryAlgorithm {
     @Override
     public String decryptFile(String encryptedFilePath) throws Exception {
         if (currentKey == null) throw new Exception("Key is not initialized");
-        Cipher cipher = Cipher.getInstance("DES");
-        cipher.init(Cipher.DECRYPT_MODE, currentKey);
-
+        Cipher cipher = Cipher.getInstance("DES"+ mode + padding);
+        if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.DECRYPT_MODE, currentKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.DECRYPT_MODE, currentKey);
+		}
         try (CipherInputStream cis = new CipherInputStream(new FileInputStream(new File(encryptedFilePath)), cipher);
              FileOutputStream fos = new FileOutputStream(new File(decrypt_path))) {
             byte[] buffer = new byte[1024];
@@ -126,7 +160,16 @@ public class Des implements SymmetryAlgorithm {
                 fos.write(buffer, 0, read);
             }
         }
-        return decrypt_path;
+        // Sau khi giải mã xong
+	    Path outputPath = Paths.get(decrypt_path);
+	    String mimeType = Files.probeContentType(outputPath);
+	    
+	    if (mimeType != null && mimeType.startsWith("text")) {
+	        String content = Files.readString(outputPath, StandardCharsets.UTF_8);
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n" + content;
+	    } else {
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n(File không phải dạng văn bản)";
+	    }
     }
     private String generateFileName(String originalPath, String suffix) {
         int dotIndex = originalPath.lastIndexOf('.');
@@ -147,6 +190,19 @@ public class Des implements SymmetryAlgorithm {
 	public void setSecretKey(byte[] keyBytes) {
 		this.currentKey = new SecretKeySpec(keyBytes, "DES");
 	}
+	
+	@Override
+	public void setMode(String mode) {
+		this.mode = "/"+mode;
+		
+	}
+	
+	@Override
+	public void setPadding(String padding) {
+		this.padding ="/"+padding;
+		
+	}
+
 
     public static void main(String[] args) throws Exception {
         Des camellia = new Des();

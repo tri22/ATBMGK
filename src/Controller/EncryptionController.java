@@ -20,7 +20,7 @@ import Model.SymmetryAlgorithm.*;
 public class EncryptionController {
 	private final Map<String, BasicAlgorithm> basics = new HashMap<>();
 	private final Map<String, SymmetryAlgorithm> symmetrics = new HashMap<>();
-	private final List<String> symmetricsFile = new ArrayList<>();
+	private final List<String> asymmetricsFile = new ArrayList<>();
 	private final Map<String, AsymmetryAlgorithm> asymmetrics = new HashMap<>();
 	private final Map<String, HashAlgo> hash = new HashMap<>();
 	private Map<String, String[]> validKeySizes = new HashMap<>();
@@ -28,6 +28,7 @@ public class EncryptionController {
 	public EncryptionController() {
 		// Chuẩn hóa key thành chữ in hoa
 		hash.put("MD5", new MD5());
+		hash.put("SHA256", new SHA256());
 
 		// Basic Algorithms
 		basics.put("CEASAR", new CaesarCipher());
@@ -48,6 +49,16 @@ public class EncryptionController {
 
 		// Asymmetric Algorithms
 		asymmetrics.put("RSA", new RSA());
+		
+		
+		asymmetricsFile.add("RSA-AES");
+		asymmetricsFile.add("RSA-DES");
+		asymmetricsFile.add("RSA-3DES");
+		asymmetricsFile.add("RSA-BLOWFISH");
+		asymmetricsFile.add("RSA-TWOFISH");
+		asymmetricsFile.add("RSA-RC5");
+		asymmetricsFile.add("RSA-CAMELLIA");
+		
 		initValidKeySizes();
 	}
 
@@ -68,29 +79,11 @@ public class EncryptionController {
 	private String normalize(String algorithm) {
 		return algorithm.trim().toUpperCase();
 	}
-
-	public String encrypt(String algorithm, String data) throws Exception {
-		String key = normalize(algorithm);
-		System.out.println("Thuật toán mã hóa đã chọn: " + algorithm);
-		if (basics.containsKey(key)) {
-			return basics.get(key).encrypt(data);
-		}
-		if (symmetrics.containsKey(key)) {
-			return symmetrics.get(key).encrypt(data);
-		}
-		if (asymmetrics.containsKey(key)) {
-			return asymmetrics.get(key).encrypt(data);
-		}
-		if (hash.containsKey(key)) {
-			return hash.get(key).hash(data);
-		}
-		return hash.get("MD5").hash(data);
-	}
-
+	
 	public boolean genKey(String algorithm, int keySize) throws Exception {
 		String key = normalize(algorithm);
 		System.out.println("Thuật toán tạo khóa đã chọn: " + algorithm);
-
+		
 		if (basics.containsKey(key)) {
 			return basics.get(key).genKey(); // không cần kiểm tra key size
 		}
@@ -98,46 +91,73 @@ public class EncryptionController {
 			int validatedSize = getValidatedKeySize(key, keySize);
 			return symmetrics.get(key).genkey(validatedSize);
 		}
-		if (asymmetrics.containsKey(key)) {
-			int validatedSize = getValidatedKeySize(key, keySize);
-			return asymmetrics.get(key).genKey(validatedSize);
+		if (key.contains("RSA")) {			
+			int validatedSize = getValidatedKeySize("RSA", keySize);
+			return asymmetrics.get("RSA").genKey(validatedSize);
 		}
 		throw new Exception("Thuật toán không được hỗ trợ: " + key);
 	}
-
+	
 	private int getValidatedKeySize(String algo, int requestedSize) throws Exception {
 		String key = normalize(algo);
 		String[] sizes = validKeySizes.get(key);
 		if (sizes == null) {
 			throw new Exception("Thuật toán \"" + key + "\" không hỗ trợ kiểm tra key size.");
 		}
-
+		
 		for (String sizeStr : sizes) {
 			if (Integer.parseInt(sizeStr) == requestedSize) {
 				return requestedSize; // Hợp lệ
 			}
 		}
-
+		
 		throw new Exception("Key size " + requestedSize + " không hợp lệ cho thuật toán " + key
 				+ ". Các giá trị hợp lệ là: " + String.join(", ", sizes));
 	}
-
+	
 	public void loadKey(String algorithm) throws Exception {
 		String key = normalize(algorithm);
 		System.out.println("Thuật toán tải khóa đã chọn: " + algorithm);
-
+		
 		if (basics.containsKey(key)) {
 			basics.get(key).loadKey();
 		}
 		if (symmetrics.containsKey(key)) {
 			symmetrics.get(key).loadKey();
 		}
-		if (asymmetrics.containsKey(key)) {
+		if (key.contains("RSA")) {			
 			asymmetrics.get(key).loadKey();
 		}
 	}
 
-	public String decrypt(String algorithm, String encryptedData) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String encrypt(String algorithm, String data, String mode, String padding) throws Exception {
+		String key = normalize(algorithm);
+		System.out.println("Thuật toán mã hóa đã chọn: " + algorithm);
+		System.out.println("Mode đã chọn: " + mode);
+		System.out.println("Padding đã chọn: " + padding);
+		if (basics.containsKey(key)) {
+			return basics.get(key).encrypt(data);
+		}
+		if (symmetrics.containsKey(key)) {
+			SymmetryAlgorithm algo = symmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			return algo.encrypt(data);
+		}
+		if (asymmetrics.containsKey(key)) {
+			AsymmetryAlgorithm algo = asymmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			return algo.encrypt(data);
+		}
+		if (hash.containsKey(key)) {
+			return hash.get(key).hash(data);
+		}
+		return hash.get("MD5").hash(data);
+	}
+
+
+	public String decrypt(String algorithm, String encryptedData, String mode, String padding) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, Exception {
 		String key = normalize(algorithm);
 		System.out.println("Thuật toán giải mã đã chọn: " + algorithm);
@@ -146,24 +166,40 @@ public class EncryptionController {
 			return basics.get(key).decrypt(encryptedData);
 		}
 		if (symmetrics.containsKey(key)) {
-			return symmetrics.get(key).decrypt(encryptedData);
+			SymmetryAlgorithm algo = symmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			return algo.decrypt(encryptedData);
 		}
 		if (asymmetrics.containsKey(key)) {
-			return asymmetrics.get(key).decrypt(encryptedData);
+			AsymmetryAlgorithm algo = asymmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			return algo.decrypt(encryptedData);
 		}
 		return "Thuật toán chưa được hỗ trợ: " + algorithm;
 	}
 
-	public String encryptFile(String algorithm, String selectedFile) throws IOException, Exception {
+	public String encryptFile(String algorithm, String selectedFile, String mode, String padding) throws IOException, Exception {
 		String key = normalize(algorithm);
 		System.out.println("Thuật toán mã hóa đã chọn: " + algorithm);
 		if (symmetrics.containsKey(key)) {
+			SymmetryAlgorithm algo = symmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
 			return symmetrics.get(key).encryptFile(selectedFile);
 		}
-		if (asymmetrics.containsKey(key)) {
-//			String res = "Thuật toán đã mã hóa vào file: ";
-//			res += asymmetrics.get(key).encryptFile(selectedFile);
-//			return res;
+		if (asymmetricsFile.contains(key)) {
+			AsymmetryAlgorithm algo = asymmetrics.get("RSA");
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			String[] parts = key.split("-");
+			String asymAlgo = parts[0]; // "RSA"
+			String symAlgo = parts[1]; 
+			System.out.println(symAlgo);
+			String res = "Thuật toán đã mã hóa vào file: ";
+			res += algo.encryptFile(selectedFile,symAlgo);
+			return res;
 		}
 		if (hash.containsKey(key)) {
 			return hash.get(key).hashFile(selectedFile);
@@ -171,19 +207,29 @@ public class EncryptionController {
 		return "Thuật toán chưa được hỗ trợ: " + algorithm;
 	}
 
-	public String decryptFile(String algorithm, String encryptedFile) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String decryptFile(String algorithm, String encryptedFile, String mode, String padding) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException, Exception {
 		String key = normalize(algorithm);
 		System.out.println("Thuật toán mã hóa đã chọn: " + algorithm);
 		if (symmetrics.containsKey(key)) { 
+			SymmetryAlgorithm algo = symmetrics.get(key);
+			algo.setMode(mode);
+			algo.setPadding(padding);
 			String res = "Thuật toán đã giải mã vào file: ";
-			res += symmetrics.get(key).decryptFile(encryptedFile);
+			res += algo.decryptFile(encryptedFile);
 			return res;
 		}
-		if (asymmetrics.containsKey(key)) {
-//			String res = "Thuật toán đã giải mã vào file: ";
-//			res +=  asymmetrics.get(key).decryptFile();
-//			return res;
+		if (asymmetricsFile.contains(key)) {
+			AsymmetryAlgorithm algo = asymmetrics.get("RSA");
+			algo.setMode(mode);
+			algo.setPadding(padding);
+			String[] parts = key.split("-");
+			String asymAlgo = parts[0]; // "RSA"
+			String symAlgo = parts[1];  
+			System.out.println(symAlgo);
+			String res = "Thuật toán đã giải mã vào file: ";
+			res +=  algo.decryptFile(symAlgo);
+			return res;
 
 		}
 		return "Thuật toán chưa được hỗ trợ: " + algorithm;

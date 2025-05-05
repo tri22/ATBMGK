@@ -9,8 +9,17 @@ public class Hill implements BasicAlgorithm {
     private int[][] keyMatrix;
     private int matrixSize = 2;
     private static final int MOD = 26;
-    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/hill.txt";
+    private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/hill.txt";
     private Map<Integer, Integer> wordLengths = new HashMap<>(); 
+    
+    public Hill() {
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
+    }
+    
     @Override
     public boolean genKey() {
         Random rnd = new Random();

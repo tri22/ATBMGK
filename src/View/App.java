@@ -1,11 +1,14 @@
 package View;
 
 import Controller.EncryptionController;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.swing.*;
+import java.security.Security;
 
 public class App {
     public static void main(String[] args) {
+        Security.addProvider(new BouncyCastleProvider());
         SwingUtilities.invokeLater(() -> {
             EncryptionController controller = new EncryptionController();
             EncryptionMainPanel mainPanel = new EncryptionMainPanel(controller);

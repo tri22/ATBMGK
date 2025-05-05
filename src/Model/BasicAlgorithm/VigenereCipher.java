@@ -9,10 +9,16 @@ import java.io.IOException;
 import java.util.Random;
 
 public class VigenereCipher implements BasicAlgorithm {
-	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/vigenere.txt";
+	private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/vigenere.txt";
     private String key = "";
 
-    
+    public VigenereCipher() {
+    	 File keyDir = new File(KEY_FOLDER);
+	        if (!keyDir.exists()) {
+	            keyDir.mkdirs();
+	        }
+	}
     
     public String getKey() {
 		return key;

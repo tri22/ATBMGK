@@ -1,35 +1,104 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>ATBMProject</groupId>
-	<artifactId>ATBMProject</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<build>
-		<sourceDirectory>src</sourceDirectory>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
-				<configuration>
-					<release>11</release>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<dependencies>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk18on</artifactId>
-			<version>1.80</version> <!-- Kiểm tra phiên bản mới nhất -->
-		</dependency>
-		<dependency>
-			<groupId>org.gnu</groupId>
-			<artifactId>gnu-crypto</artifactId>
-			<version>2.0.1</version>
-		</dependency>
+    <groupId>ATBMProject</groupId>
+    <artifactId>ATBMProject</artifactId>
+    <version>0.0.1-SNAPSHOT</version> 
 
+    <properties>
+        <bcprov.version>1.80</bcprov.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
 
-	</dependencies>
+    <build>
+        <sourceDirectory>src</sourceDirectory>
+        <plugins>
+            <!-- Compiler plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Shade plugin: tạo fat-jar, bao gồm Bouncy Castle -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.bouncycastle:bcprov-jdk18on</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>View.App</mainClass>
+                                    <manifestEntries>
+                                        <Class-Path>bcprov-jdk18on-${bcprov.version}.jar</Class-Path>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Copy Bouncy Castle file ra thư mục target -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-bcprov</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bcprov-jdk18on</artifactId>
+                                    <version>${bcprov.version}</version>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <destFileName>bcprov-jdk18on-${bcprov.version}.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Bouncy Castle -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bcprov.version}</version>
+        </dependency>
+
+        <!-- GNU Crypto -->
+        <dependency>
+            <groupId>org.gnu</groupId>
+            <artifactId>gnu-crypto</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+    </dependencies>
 </project>

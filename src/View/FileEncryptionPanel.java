@@ -7,12 +7,12 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -25,13 +25,15 @@ public class FileEncryptionPanel extends JPanel {
 	    private JComboBox<Integer> SymmetrickeySize;
 	    private JButton generateKeyButton, loadKeyButton, encryptButton, decryptButton, loadFileButton;
 	    private JTextField inputField;
-	    private JTextArea outputArea, decryptedOutputArea;
+	    private JTextArea outputArea, decryptedOutputArea, fileContentArea ;
 	    private EncryptionController controller;
 	    private JPanel cardPanel;
 	    private CardLayout cardLayout;
 	    private String selectedAlgo;
 	    private String selectedType;
 	    private int selectedKeySize;
+	    private String selectedMode;
+	    private String selectedPadding;
 
 	    public FileEncryptionPanel(EncryptionController controller) {
 	        this.controller = controller;
@@ -75,25 +77,57 @@ public class FileEncryptionPanel extends JPanel {
 
 	    private JPanel createSymmetricPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	        String[] algorithms = new String[] { "AES", "DES", "TwoFish", "3DES", "BlowFish",  "Camellia", "RC5",
-	                "Cast_128"};
+	        String[] algorithms = new String[] {
+	            "AES", "DES", "TwoFish", "3DES", "BlowFish", "Camellia", "RC5", "Cast_128"
+	        };
 	        panel.add(new JLabel("Chọn thuật toán:"));
+	        
 	        SymmetricComboBox = new JComboBox<>(algorithms);
 	        SymmetricComboBox.addActionListener(e -> {
 	            selectedAlgo = (String) SymmetricComboBox.getSelectedItem();
 	            System.out.println(selectedAlgo);
 	        });
 	        panel.add(SymmetricComboBox);
-	        SymmetrickeySize = new JComboBox<>(new Integer[] {40, 56, 64, 80, 128, 160, 192, 224, 256, 512, 1024, 2048});
-	        SymmetrickeySize.addActionListener(e->{
-	        	 selectedKeySize =(Integer) SymmetrickeySize.getSelectedItem();
-                 System.out.println("Key Size Changed To: " + selectedKeySize);
+
+	        SymmetrickeySize = new JComboBox<>(new Integer[] {
+	            40, 56, 64, 80, 112,128, 160,168 ,192, 224, 256, 512, 1024, 2048
+	        });
+	        SymmetrickeySize.addActionListener(e -> {
+	            selectedKeySize = (Integer) SymmetrickeySize.getSelectedItem();
+	            System.out.println("Key Size Changed To: " + selectedKeySize);
 	        });
 	        panel.add(SymmetrickeySize);
+
+	        // Thêm ComboBox cho chế độ (mode)
+	        String[] modes = new String[] {
+	            "ECB", "CBC", "CFB", "OFB", "CTR"
+	        };
+	        JComboBox<String> modeComboBox = new JComboBox<>(modes);
+	        modeComboBox.addActionListener(e -> {
+	            selectedMode = (String) modeComboBox.getSelectedItem();
+	            System.out.println("Chế độ: " + selectedMode);
+	        });
+	        panel.add(new JLabel("Chế độ:"));
+	        panel.add(modeComboBox);
+
+	        // Thêm ComboBox cho padding
+	        String[] paddings = new String[] {
+	            "PKCS5Padding", "NoPadding", "ISO10126Padding"
+	        };
+	        JComboBox<String> paddingComboBox = new JComboBox<>(paddings);
+	        paddingComboBox.addActionListener(e -> {
+	            selectedPadding = (String) paddingComboBox.getSelectedItem();
+	            System.out.println("Padding: " + selectedPadding);
+	        });
+	        panel.add(new JLabel("Padding:"));
+	        panel.add(paddingComboBox);
+
+	        // Nếu bạn có method xử lý nút thì gọi lại ở đây
 	        createKeySizeAndButtons(panel, algorithms, true);
 
 	        return panel;
 	    }
+
 
 	    private JPanel createAsymmetricPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -112,6 +146,30 @@ public class FileEncryptionPanel extends JPanel {
 	        });
 	    
 	        panel.add(AsymmetricKeysize);
+	        // Thêm ComboBox cho mode (thực tế RSA thường dùng ECB, nhưng bạn vẫn có thể cho người dùng chọn)
+	        String[] modes = new String[] {
+	            "ECB" // RSA chủ yếu dùng ECB trong Java
+	        };
+	        JComboBox<String> modeComboBox = new JComboBox<>(modes);
+	        modeComboBox.addActionListener(e -> {
+	            selectedMode = (String) modeComboBox.getSelectedItem();
+	            System.out.println("Chế độ: " + selectedMode);
+	        });
+	        panel.add(new JLabel("Chế độ:"));
+	        panel.add(modeComboBox);
+
+	        // Thêm ComboBox cho padding
+	        String[] paddings = new String[] {
+	            "PKCS1Padding", "OAEPPadding", "NoPadding"
+	        };
+	        JComboBox<String> paddingComboBox = new JComboBox<>(paddings);
+	        paddingComboBox.addActionListener(e -> {
+	            selectedPadding = (String) paddingComboBox.getSelectedItem();
+	            System.out.println("Padding: " + selectedPadding);
+	        });
+	        panel.add(new JLabel("Padding:"));
+	        panel.add(paddingComboBox);
+
 	        createKeySizeAndButtons(panel, algorithms, true);
 
 	        return panel;
@@ -119,7 +177,7 @@ public class FileEncryptionPanel extends JPanel {
 
 	    private JPanel createHashPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	        String[] algorithms = new String[] { "MD5" };
+	        String[] algorithms = new String[] { "MD5","SHA256" };
 	        panel.add(new JLabel("Chọn thuật toán:"));
 	        HashComboBox = new JComboBox<>(algorithms);
 	        HashComboBox.addActionListener(e -> {
@@ -209,18 +267,36 @@ public class FileEncryptionPanel extends JPanel {
 	        return mainPanel;
 	    }
 
-	    private JPanel createInputPanel() {
-	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	        panel.add(new JLabel("Dữ liệu:"));
 
-	        inputField = new JTextField(30); // hoặc dùng JTextArea
-	        panel.add(inputField);
+
+	    private JPanel createInputPanel() {
+	        JPanel panel = new JPanel();
+	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS)); // Sắp xếp theo chiều dọc
+
+	        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+	        topRow.add(new JLabel("Dữ liệu:"));
+
+	        inputField = new JTextField(30);
+	        topRow.add(inputField);
 
 	        loadFileButton = new JButton("Load file");
 	        loadFileButton.addActionListener(e -> chooseFileAndLoadContent());
-	        panel.add(loadFileButton);
+	        topRow.add(loadFileButton);
+
+	        panel.add(topRow);
+
+	        // Thêm vùng hiển thị nội dung file
+	        fileContentArea = new JTextArea(5, 40); // 5 dòng, 40 ký tự
+	        fileContentArea.setLineWrap(true);
+	        fileContentArea.setWrapStyleWord(true);
+	        fileContentArea.setEditable(false);
+
+	        JScrollPane scrollPane = new JScrollPane(fileContentArea);
+	        panel.add(scrollPane);
+
 	        return panel;
 	    }
+
 
 	    private void encryptData() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 	            IllegalBlockSizeException, BadPaddingException, Exception {
@@ -231,7 +307,7 @@ public class FileEncryptionPanel extends JPanel {
 	            return;
 	        }
 
-	        String result = controller.encryptFile(selectedAlgo, data);
+	        String result = controller.encryptFile(selectedAlgo, data,selectedMode,selectedPadding);
 	        outputArea.setText(result);
 	    }
 
@@ -244,7 +320,7 @@ public class FileEncryptionPanel extends JPanel {
 	            return;
 	        }
 
-	        String result = controller.decryptFile(selectedAlgo,encryptedData);
+	        String result = controller.decryptFile(selectedAlgo,encryptedData,selectedMode,selectedPadding);
 	        decryptedOutputArea.setText(result);
 	    }
 
@@ -281,17 +357,25 @@ public class FileEncryptionPanel extends JPanel {
 
 	        if (result == JFileChooser.APPROVE_OPTION) {
 	            File selectedFile = fileChooser.getSelectedFile();
-	            try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
-	                StringBuilder content = new StringBuilder();
-	                String line;
-	                while ((line = reader.readLine()) != null) {
-	                    content.append(line).append("\n");
+	            inputField.setText(selectedFile.getAbsolutePath());
+
+	            try {
+	                byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
+
+	                // Kiểm tra kiểu MIME để xác định có phải file văn bản không
+	                String mimeType = Files.probeContentType(selectedFile.toPath());
+
+	                if (mimeType != null && mimeType.startsWith("text")) {
+	                    // Nếu là file text, hiển thị nội dung lên TextArea
+	                    fileContentArea.setText(new String(fileBytes, StandardCharsets.UTF_8));
+	                } else {
+	                    // Nếu là file nhị phân
+	                    fileContentArea.setText("Đã chọn file nhị phân: " + selectedFile.getName() + "\nKích thước: " + fileBytes.length + " bytes");
 	                }
-	                inputField.setText(selectedFile.getAbsolutePath());
+
 	            } catch (IOException ex) {
 	                JOptionPane.showMessageDialog(this, "Lỗi đọc file: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
 	            }
 	        }
 	    }
-
 }

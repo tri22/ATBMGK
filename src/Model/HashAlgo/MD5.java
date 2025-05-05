@@ -51,7 +51,7 @@ public class MD5 implements HashAlgo {
 					writer.write(hashResult);
 				}
 			}
-			hashResult += "/n Xem chi tiết ở file: ";
+			hashResult += " Xem chi tiết ở file: ";
 			hashResult +=encrypt_path;
 			return hashResult;
 

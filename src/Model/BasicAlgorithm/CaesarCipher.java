@@ -2,6 +2,7 @@ package Model.BasicAlgorithm;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,10 +10,14 @@ import java.util.Random;
 
 public class CaesarCipher implements BasicAlgorithm {
     private int shift;
-    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/caesar.txt";
-    
+    private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/caesar.txt";
     public CaesarCipher() {
 //        genKey();
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
     }
 
     @Override

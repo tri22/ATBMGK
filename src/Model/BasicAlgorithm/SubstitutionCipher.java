@@ -2,6 +2,7 @@ package Model.BasicAlgorithm;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,12 +15,17 @@ import java.util.Map;
 
 public class SubstitutionCipher implements BasicAlgorithm{
 	private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/substitution.txt";
+	private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/substitution.txt";
 	private Map<Character, Character> encryptMap = new HashMap<>();
 	private Map<Character, Character> decryptMap = new HashMap<>();
 
 	    public SubstitutionCipher() {
 	        genKey();
+	        File keyDir = new File(KEY_FOLDER);
+	        if (!keyDir.exists()) {
+	            keyDir.mkdirs();
+	        }
 	    }
 	    
 	    @Override

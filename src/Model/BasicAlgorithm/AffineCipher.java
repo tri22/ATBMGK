@@ -2,6 +2,7 @@ package Model.BasicAlgorithm;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Random;
@@ -9,9 +10,14 @@ import java.util.Random;
 public class AffineCipher implements BasicAlgorithm{
 	int [] key ;
     private static final int N = 26;
-    private static final String KEY_PATH = "src/Model/BasicAlgorithm/keys/affine.txt";
+    private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/affine.txt";
     public AffineCipher() {
     	genKey();
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
     }
     
     @Override

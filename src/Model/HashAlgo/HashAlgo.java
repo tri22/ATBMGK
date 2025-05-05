@@ -1,6 +1,13 @@
 package Model.HashAlgo;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+
 public interface HashAlgo {
-	String hash(String data);
-	String hashFile(String src);
+
+    public String hash(String data);
+      
+    public String hashFile(String src) ;
+
 }

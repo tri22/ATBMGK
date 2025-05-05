@@ -31,5 +31,10 @@ public interface SymmetryAlgorithm {
 	public SecretKey getSecretKey();
 
 	public void setSecretKey(byte[] decryptedSymmetricKeyBytes);
+	
+	public void setMode(String mode);
 
+	public void setPadding(String padding);
+	
+	public void generateIV();
 }

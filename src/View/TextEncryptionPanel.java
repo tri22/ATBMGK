@@ -28,7 +28,9 @@ public class TextEncryptionPanel extends JPanel {
 	    private String selectedAlgo;
 	    private String selectedType;
 	    private int selectedKeySize;
-
+	    private String selectedMode;
+	    private String selectedPadding;
+	    
 	    public TextEncryptionPanel(EncryptionController controller) {
 	        this.controller = controller;
 	        createUI();
@@ -73,21 +75,52 @@ public class TextEncryptionPanel extends JPanel {
 
 	    private JPanel createSymmetricPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	        String[] algorithms = new String[] { "AES", "DES", "TwoFish", "3DES", "BlowFish", "Camellia", "RC5",
-	                "Cast_128"};
+	        String[] algorithms = new String[] {
+	            "AES", "DES", "TwoFish", "3DES", "BlowFish", "Camellia", "RC5", "Cast_128"
+	        };
 	        panel.add(new JLabel("Chọn thuật toán:"));
+	        
 	        SymmetricComboBox = new JComboBox<>(algorithms);
 	        SymmetricComboBox.addActionListener(e -> {
 	            selectedAlgo = (String) SymmetricComboBox.getSelectedItem();
 	            System.out.println(selectedAlgo);
 	        });
 	        panel.add(SymmetricComboBox);
-	        SymmetrickeySize = new JComboBox<>(new Integer[] {40, 56, 64, 80,112 ,128, 160,168, 192, 224, 256, 512, 1024, 2048});
-	        SymmetrickeySize.addActionListener(e->{
-	        	 selectedKeySize = (Integer) SymmetrickeySize.getSelectedItem();
-                System.out.println("Key Size Changed To: " + selectedKeySize);
+
+	        SymmetrickeySize = new JComboBox<>(new Integer[] {
+	        		40, 56, 64, 80, 112,128, 160,168 ,192, 224, 256, 512, 1024, 2048
+	        });
+	        SymmetrickeySize.addActionListener(e -> {
+	            selectedKeySize = (Integer) SymmetrickeySize.getSelectedItem();
+	            System.out.println("Key Size Changed To: " + selectedKeySize);
 	        });
 	        panel.add(SymmetrickeySize);
+
+	        // Thêm ComboBox cho chế độ (mode)
+	        String[] modes = new String[] {
+	            "ECB", "CBC", "CFB", "OFB", "CTR"
+	        };
+	        JComboBox<String> modeComboBox = new JComboBox<>(modes);
+	        modeComboBox.addActionListener(e -> {
+	            selectedMode = (String) modeComboBox.getSelectedItem();
+	            System.out.println("Chế độ: " + selectedMode);
+	        });
+	        panel.add(new JLabel("Chế độ:"));
+	        panel.add(modeComboBox);
+
+	        // Thêm ComboBox cho padding
+	        String[] paddings = new String[] {
+	            "PKCS5Padding", "NoPadding", "ISO10126Padding"
+	        };
+	        JComboBox<String> paddingComboBox = new JComboBox<>(paddings);
+	        paddingComboBox.addActionListener(e -> {
+	            selectedPadding = (String) paddingComboBox.getSelectedItem();
+	            System.out.println("Padding: " + selectedPadding);
+	        });
+	        panel.add(new JLabel("Padding:"));
+	        panel.add(paddingComboBox);
+
+	        // Nếu bạn có method xử lý nút thì gọi lại ở đây
 	        createKeySizeAndButtons(panel, algorithms, true);
 
 	        return panel;
@@ -95,24 +128,53 @@ public class TextEncryptionPanel extends JPanel {
 
 	    private JPanel createAsymmetricPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+	        
 	        String[] algorithms = new String[] { "RSA" };
 	        panel.add(new JLabel("Chọn thuật toán:"));
+
 	        AsymmetricComboBox = new JComboBox<>(algorithms);
 	        AsymmetricComboBox.addActionListener(e -> {
 	            selectedAlgo = (String) AsymmetricComboBox.getSelectedItem();
-	            System.out.println(selectedAlgo);
+	            System.out.println("Thuật toán: " + selectedAlgo);
 	        });
 	        panel.add(AsymmetricComboBox);
+
 	        AsymmetricKeysize = new JComboBox<>(new Integer[] { 512, 1024, 2048 });
-	        AsymmetricKeysize.addActionListener(e->{
-	        	 selectedKeySize = (Integer) AsymmetricKeysize.getSelectedItem();
-                 System.out.println("Key Size Changed To: " + selectedKeySize);
+	        AsymmetricKeysize.addActionListener(e -> {
+	            selectedKeySize = (Integer) AsymmetricKeysize.getSelectedItem();
+	            System.out.println("Key Size Changed To: " + selectedKeySize);
 	        });
 	        panel.add(AsymmetricKeysize);
+
+	        // Thêm ComboBox cho mode (thực tế RSA thường dùng ECB, nhưng bạn vẫn có thể cho người dùng chọn)
+	        String[] modes = new String[] {
+	            "ECB" // RSA chủ yếu dùng ECB trong Java
+	        };
+	        JComboBox<String> modeComboBox = new JComboBox<>(modes);
+	        modeComboBox.addActionListener(e -> {
+	            selectedMode = (String) modeComboBox.getSelectedItem();
+	            System.out.println("Chế độ: " + selectedMode);
+	        });
+	        panel.add(new JLabel("Chế độ:"));
+	        panel.add(modeComboBox);
+
+	        // Thêm ComboBox cho padding
+	        String[] paddings = new String[] {
+	            "PKCS1Padding", "OAEPPadding", "NoPadding"
+	        };
+	        JComboBox<String> paddingComboBox = new JComboBox<>(paddings);
+	        paddingComboBox.addActionListener(e -> {
+	            selectedPadding = (String) paddingComboBox.getSelectedItem();
+	            System.out.println("Padding: " + selectedPadding);
+	        });
+	        panel.add(new JLabel("Padding:"));
+	        panel.add(paddingComboBox);
+
 	        createKeySizeAndButtons(panel, algorithms, true);
 
 	        return panel;
 	    }
+
 
 	    private JPanel createClassicalPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -132,7 +194,7 @@ public class TextEncryptionPanel extends JPanel {
 
 	    private JPanel createHashPanel() {
 	        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-	        String[] algorithms = new String[] { "MD5" };
+	        String[] algorithms = new String[] { "MD5","SHA256" };
 	        panel.add(new JLabel("Chọn thuật toán:"));
 	        HashComboBox = new JComboBox<>(algorithms);
 	        HashComboBox.addActionListener(e -> {
@@ -201,8 +263,7 @@ public class TextEncryptionPanel extends JPanel {
 	        decryptButton = new JButton("Giải Mã");
 	        decryptButton.addActionListener(e -> {
 	            try {
-	                String decrypted = controller.decrypt(selectedAlgo, outputArea.getText());
-	                decryptedOutputArea.setText(decrypted);
+	            	decryptData();
 	            } catch (Exception ex) {
 	                decryptedOutputArea.setText("Lỗi khi giải mã: " + ex.getMessage());
 	                ex.printStackTrace();
@@ -242,7 +303,7 @@ public class TextEncryptionPanel extends JPanel {
 	            return;
 	        }
 
-	        String result = controller.encrypt(selectedAlgo, data);
+	        String result = controller.encrypt(selectedAlgo, data, selectedMode,selectedPadding);
 	        outputArea.setText(result);
 	    }
 
@@ -255,7 +316,7 @@ public class TextEncryptionPanel extends JPanel {
 	            return;
 	        }
 
-	        String result = controller.decrypt(selectedAlgo, encryptedData);
+	        String result = controller.decrypt(selectedAlgo, encryptedData, selectedMode,selectedPadding);
 	        decryptedOutputArea.setText(result);
 	    }
 

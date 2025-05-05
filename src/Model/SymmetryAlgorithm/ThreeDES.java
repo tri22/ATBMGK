@@ -3,12 +3,17 @@ package Model.SymmetryAlgorithm;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -17,18 +22,31 @@ import javax.crypto.NoSuchPaddingException;
 
 public class ThreeDES implements SymmetryAlgorithm {
     private SecretKey secretKey;
-    private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/3des.key";
+    private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/3des.txt";
     public String decrypt_path = "";
     public String encrypt_path = "";
     public String mode ="";
     public  String padding ="";
-
+    public IvParameterSpec ivSpec;
+	  
+    public ThreeDES() {
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
+	}
+    
+	@Override
+	public void generateIV() {
+        SecureRandom random = new SecureRandom();
+        byte[] iv = new byte[8]; 
+        random.nextBytes(iv);  
+        this.ivSpec = new IvParameterSpec(iv);  
+    }
     @Override
     public boolean genkey() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance("DESede");
-        keyGen.init(168); // 3DES dùng 168-bit key
-        secretKey = keyGen.generateKey();
-        return saveKeyToFile();
+       return genkey(168);
     }
 
     @Override
@@ -36,6 +54,7 @@ public class ThreeDES implements SymmetryAlgorithm {
         KeyGenerator keyGen = KeyGenerator.getInstance("DESede");
         keyGen.init(keySize);
         secretKey = keyGen.generateKey();
+        generateIV();
         return saveKeyToFile();
     }
 
@@ -70,27 +89,35 @@ public class ThreeDES implements SymmetryAlgorithm {
     }
 
 	public String encrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
+			IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
 		byte[] rawData = data.getBytes();
 		return encrypt(rawData);
 	}
 
 	public String encrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
-		Cipher cipher = Cipher.getInstance("DESede");
-		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+			IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+		Cipher cipher = Cipher.getInstance("DESede" + mode + padding);
+		 if (!mode.contains("ECB")) {
+			    cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+			} else {
+			    cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+			}
 		return Base64.getEncoder().encodeToString(cipher.doFinal(data));
 	}
 
 	public String decrypt(String data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		return decrypt(Base64.getDecoder().decode(data));
 	}
 
 	public String decrypt(byte[] data) throws NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-		Cipher cipher = Cipher.getInstance("DESede");
-		cipher.init(Cipher.DECRYPT_MODE, secretKey);
+			IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+		Cipher cipher = Cipher.getInstance("DESede" + mode + padding);
+		if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.DECRYPT_MODE, secretKey);
+		}
 		byte[] decryptedBytes = cipher.doFinal(data);
 		return new String(decryptedBytes);
 	}
@@ -100,9 +127,12 @@ public class ThreeDES implements SymmetryAlgorithm {
             InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
     	this.decrypt_path = generateFileName(src,"decrypt");
     	this.encrypt_path = generateFileName(src,"encrypt");
-    	Cipher cipher = Cipher.getInstance("DESede");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-
+    	Cipher cipher = Cipher.getInstance("DESede" + mode + padding);
+    	 if (!mode.contains("ECB")) {
+			    cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+			} else {
+			    cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+			}
         try (FileInputStream fis = new FileInputStream(src);
              FileOutputStream fos = new FileOutputStream(encrypt_path)) {
             byte[] inputBytes = fis.readAllBytes();
@@ -115,16 +145,28 @@ public class ThreeDES implements SymmetryAlgorithm {
     @Override
     public String decryptFile(String encryptedFilePath) throws InvalidKeyException, NoSuchAlgorithmException,
             NoSuchPaddingException, IOException, IllegalBlockSizeException, BadPaddingException, Exception {
-        Cipher cipher = Cipher.getInstance("DESede");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-
+        Cipher cipher = Cipher.getInstance("DESede" + mode + padding);
+        if (!mode.contains("ECB")) {
+		    cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+		} else {
+		    cipher.init(Cipher.DECRYPT_MODE, secretKey);
+		}
         try (FileInputStream fis = new FileInputStream(encryptedFilePath);
              FileOutputStream fos = new FileOutputStream(decrypt_path)) {
             byte[] inputBytes = fis.readAllBytes();
             byte[] outputBytes = cipher.doFinal(inputBytes);
             fos.write(outputBytes);
         }
-        return decrypt_path;
+        // Sau khi giải mã xong
+	    Path outputPath = Paths.get(decrypt_path);
+	    String mimeType = Files.probeContentType(outputPath);
+	    
+	    if (mimeType != null && mimeType.startsWith("text")) {
+	        String content = Files.readString(outputPath, StandardCharsets.UTF_8);
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n" + content;
+	    } else {
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n(File không phải dạng văn bản)";
+	    }
     }
     private String generateFileName(String originalPath, String suffix) {
         int dotIndex = originalPath.lastIndexOf('.');
@@ -145,6 +187,19 @@ public class ThreeDES implements SymmetryAlgorithm {
    	public void setSecretKey(byte[] keyBytes) {
    		this.secretKey = new SecretKeySpec(keyBytes, "DESede");
    	}
+    
+	@Override
+	public void setMode(String mode) {
+		this.mode = "/"+mode;
+		
+	}
+	
+	@Override
+	public void setPadding(String padding) {
+		this.padding ="/"+padding;
+		
+	}
+
 
     public static void main(String[] args) throws Exception {
         ThreeDES camellia = new ThreeDES();

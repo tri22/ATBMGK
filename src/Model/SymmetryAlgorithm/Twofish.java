@@ -11,12 +11,16 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Base64;
 
@@ -24,13 +28,30 @@ public class Twofish implements SymmetryAlgorithm {
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
-    private static final String KEY_PATH = "src/Model/SymmetryAlgorithm/keys/Twofish.key";
+    private static final String KEY_FOLDER       = "keys";
+    private static final String KEY_PATH = KEY_FOLDER+"/twofish.txt";
     public String decrypt_path = "";
     public String encrypt_path = "";
     public String mode ="";
     public  String padding ="";
     private SecretKey key;
-
+    public IvParameterSpec ivSpec;
+	  
+    public Twofish() {
+    	File keyDir = new File(KEY_FOLDER);
+        if (!keyDir.exists()) {
+            keyDir.mkdirs();
+        }
+	}
+    
+	@Override
+	public void generateIV() {
+        SecureRandom random = new SecureRandom();
+        byte[] iv = new byte[16]; 
+        random.nextBytes(iv);  
+        this.ivSpec = new IvParameterSpec(iv);  
+    }
+	
     @Override
     public boolean genkey() throws Exception {
         byte[] keyBytes = new byte[16];
@@ -44,6 +65,7 @@ public class Twofish implements SymmetryAlgorithm {
         byte[] keyBytes = new byte[keySize / 8];
         new java.security.SecureRandom().nextBytes(keyBytes);
         key = new SecretKeySpec(keyBytes, "RAW");
+        generateIV();
         return saveKeyToFile();
     }
 
@@ -132,7 +154,16 @@ public class Twofish implements SymmetryAlgorithm {
         byte[] content = readFile(encryptedFilePath);
         byte[] decrypted = process(false, content);
         writeFile(decrypt_path, decrypted);
-        return decrypt_path ;
+        // Sau khi giải mã xong
+	    Path outputPath = Paths.get(decrypt_path);
+	    String mimeType = Files.probeContentType(outputPath);
+	    
+	    if (mimeType != null && mimeType.startsWith("text")) {
+	        String fileContent = Files.readString(outputPath, StandardCharsets.UTF_8);
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n" + fileContent;
+	    } else {
+	        return "Đường dẫn: " + outputPath.toAbsolutePath() + "\n(File không phải dạng văn bản)";
+	    }
     }
 
     private byte[] readFile(String path) throws IOException {
@@ -164,6 +195,19 @@ public class Twofish implements SymmetryAlgorithm {
    	public void setSecretKey(byte[] keyBytes) {
    		this.key = new SecretKeySpec(keyBytes, "Twofish");
    	}
+    
+	@Override
+	public void setMode(String mode) {
+		this.mode = "/"+mode;
+		
+	}
+	
+	@Override
+	public void setPadding(String padding) {
+		this.padding ="/"+padding;
+		
+	}
+
 
     public static void main(String[] args) throws Exception {
         Twofish camellia = new Twofish();
